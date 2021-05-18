@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Quiz</title>
+</head>
+<body>
+    <div id="question_board">
+        <p id="question_number"></p>
+        <div id="question"></div>
+    </div>
+</body>
+
+{{ questions|json_script:"questions" }}
+<script>
+    let total_questions = 0;
+    let total_score = 0;
+    let user_score = 0;
+
+    let questions = JSON.parse(document.getElementById("questions").textContent);
+    console.log(questions);
+
+    questions.forEach(function (question){
+        question.answered = false;
+    });
+
+    const question_board = document.getElementById("question");
+    const question_num = document.getElementById("question_number");
+
+    var set_question_form = function (question) {
+        if (total_questions >= 10){
+            let score_data = `
+                <p>Total Score ${total_score}</p>
+                <p>Your Score ${user_score}</p>
+            `;
+            question_board.innerHTML = score_data;
+            question_num.innerText = 'Score'
+            return
+        }
+        total_questions += 1;
+        question_num.innerText = total_questions;
+        question_board.innerHTML = question.form;
+        question_board.setAttribute('value', question.id);
+        bind_answer_events();
+    }
+
+    set_question_form(get_question('easy'));
+
+    function bind_answer_events() {
+        var answers = document.getElementById("id_answer");
+        answers.onclick = function (event){
+            let question_id = question_board.getAttribute('value');
+            let selected_value = event.target.getAttribute('value');
+            let question = get_quesiton(parseInt(question_id))
+            question.answered = true;
+            total_score += question.score;
+            let choices = question.answer_choices;
+            var answer_set = false;
+            choices.forEach((choice)=>{
+                if (choice.id === parseInt(selected_value) && choice.is_answer === true){
+                    // CORRECT ANSWER
+                    user_score += question.score;
+                    if (question.level === 'easy'){
+                        answer_set = true;
+                        return set_question_form(get_question('medium'))
+                    }else if (question.level === 'medium'){
+                        answer_set = true;
+                        return set_question_form(get_question('hard'))
+                    }else{
+                        answer_set = true;
+                        return set_question_form(get_question('hard'))
+                    }
+                }
+            });
+            if (answer_set === false){
+                if (question.level === 'easy'){
+                    set_question_form(get_question('easy'))
+                }else if (question.level === 'medium'){
+                    set_question_form(get_question('easy'))
+                }else{
+                    set_question_form(get_question('medium'))
+                }
+            }
+        }
+    }
+
+    function get_question(level){
+        let ret_question = null;
+        questions.forEach((question)=>{
+           if (question.level === level && question.answered === false ){
+                ret_question = question
+               return;
+           }
+        });
+        return ret_question;
+    }
+
+    function get_quesiton(id){
+        let ret_question = null;
+        questions.forEach((question)=>{
+           if (question.id === id){
+                ret_question = question
+               return;
+           }
+        });
+        return ret_question
+    }
+</script>
+
+</html>
